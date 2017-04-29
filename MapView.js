@@ -131,63 +131,63 @@ define(function(require, exports, module) {
         var options;
         switch (this.mapType) {
 
-        // Create google.maps.Map
-        case MapType.GOOGLEMAPS:
-            this.map = new google.maps.Map(elm, this.options.mapOptions);
+            // Create google.maps.Map
+            case MapType.GOOGLEMAPS:
+                this.map = new google.maps.Map(elm, this.options.mapOptions);
 
-            // Listen for the first occurance of 'projection_changed', to ensure the map is full
-            // initialized.
-            var func = this.map.addListener('projection_changed', function() {
-                google.maps.event.removeListener(func);
+                // Listen for the first occurance of 'projection_changed', to ensure the map is full
+                // initialized.
+                var func = this.map.addListener('projection_changed', function() {
+                    google.maps.event.removeListener(func);
+                    this._initComplete = true;
+                }.bind(this));
+                break;
+
+            // Create leaflet Map
+            case MapType.LEAFLET:
+                this.map = L.map(elm, this.options.mapOptions);
                 this._initComplete = true;
-            }.bind(this));
-            break;
+                break;
 
-        // Create leaflet Map
-        case MapType.LEAFLET:
-            this.map = L.map(elm, this.options.mapOptions);
-            this._initComplete = true;
-            break;
-
-        // Create open layers 3 Map
-        case MapType.OPENLAYERS3:
-            options = this.options.mapOptions;
-            var center = options.center;
-            this.map = new ol.Map({
-                target: elm,
-                controls: ol.control.defaults({attributionOptions: {collapsible: false}}),
-                view: new ol.View({
-                    center: ol.proj.transform([MapUtility.lng(center), MapUtility.lat(center)], 'EPSG:4326', 'EPSG:3857'),
-                    zoom: options.zoom
-                })
-            });
-            this._surface.on('resize', function() {
-                this.map.updateSize();
-            }.bind(this));
-            // When famo.us removes the OpenLayers div from the DOM, the canvas gets
-            // hidden and is not restored to its visible state when shown again.
-            // The following code, calls 'updateSize' whenever famo.us re-deploys
-            // the surface to the DOM, fixing this issue.
-            this._surface.on('deploy', function() {
-                if (this._initComplete) {
+            // Create open layers 3 Map
+            case MapType.OPENLAYERS3:
+                options = this.options.mapOptions;
+                var center = options.center;
+                this.map = new ol.Map({
+                    target: elm,
+                    controls: ol.control.defaults({attributionOptions: {collapsible: false}}),
+                    view: new ol.View({
+                        center: ol.proj.transform([MapUtility.lng(center), MapUtility.lat(center)], 'EPSG:4326', 'EPSG:3857'),
+                        zoom: options.zoom
+                    })
+                });
+                this._surface.on('resize', function() {
                     this.map.updateSize();
-                }
-            }.bind(this));
-            this.map.once('postrender', function() {
-                this._initComplete = true;
-            }.bind(this));
-            break;
+                }.bind(this));
+                // When famo.us removes the OpenLayers div from the DOM, the canvas gets
+                // hidden and is not restored to its visible state when shown again.
+                // The following code, calls 'updateSize' whenever famo.us re-deploys
+                // the surface to the DOM, fixing this issue.
+                this._surface.on('deploy', function() {
+                    if (this._initComplete) {
+                        this.map.updateSize();
+                    }
+                }.bind(this));
+                this.map.once('postrender', function() {
+                    this._initComplete = true;
+                }.bind(this));
+                break;
 
-        // Create mapbox GL Map
-        case MapType.MAPBOXGL:
-            options = {};
-            for (var key in this.options.mapOptions) {
-                options[key] = this.options.mapOptions[key];
-            }
-            options.container = elm;
-            this.map = new mapboxgl.Map(options);
-            this._initComplete = true;
-            break;
+            // Create mapbox GL Map
+            case MapType.MAPBOXGL:
+                options = {};
+                for (var key in this.options.mapOptions) {
+                    options[key] = this.options.mapOptions[key];
+                }
+                options.container = elm;
+                this.map = new mapboxgl.Map(options);
+                this._initComplete = true;
+                break;
         }
     };
 
@@ -258,13 +258,13 @@ define(function(require, exports, module) {
      */
     MapView.prototype.getRotation = function() {
         switch (this.mapType) {
-        case MapType.GOOGLEMAPS:
-        case MapType.LEAFLET:
-            return 0;
-        case MapType.OPENLAYERS3:
-            return this.map.getView().getRotation();
-        case MapType.MAPBOXGL:
-            return (this.map.getBearing() * Math.PI) / -180;
+            case MapType.GOOGLEMAPS:
+            case MapType.LEAFLET:
+                return 0;
+            case MapType.OPENLAYERS3:
+                return this.map.getView().getRotation();
+            case MapType.MAPBOXGL:
+                return (this.map.getBearing() * Math.PI) / -180;
         }
     };
 
@@ -277,25 +277,25 @@ define(function(require, exports, module) {
     MapView.prototype.pointFromPosition = function(position) {
         var pnt;
         switch (this.mapType) {
-        case MapType.GOOGLEMAPS:
-            if (!(position instanceof google.maps.LatLng)) {
-                position = new google.maps.LatLng(MapUtility.lat(position), MapUtility.lng(position), true);
-            }
-            var worldPoint = this.map.getProjection().fromLatLngToPoint(position);
-            return {
-                x: (worldPoint.x - this._cache.bottomLeft.x) * this._cache.scale,
-                y: (worldPoint.y - this._cache.topRight.y) * this._cache.scale
-            };
-        case MapType.LEAFLET:
-            // Note: smooth zooming is not yet supported for leaflet
-            pnt = this.map.latLngToContainerPoint(position);
-            return pnt;
-        case MapType.OPENLAYERS3:
-            // Note: updates during map interaction are not yet supported
-            pnt = this.map.getPixelFromCoordinate(ol.proj.transform([MapUtility.lng(position), MapUtility.lat(position)], 'EPSG:4326', 'EPSG:3857'));
-            return {x: pnt[0], y: pnt[1]};
-        case MapType.MAPBOXGL:
-            return this.map.project([MapUtility.lat(position), MapUtility.lng(position)]);
+            case MapType.GOOGLEMAPS:
+                if (!(position instanceof google.maps.LatLng)) {
+                    position = new google.maps.LatLng(MapUtility.lat(position), MapUtility.lng(position), true);
+                }
+                var worldPoint = this.map.getProjection().fromLatLngToPoint(position);
+                return {
+                    x: (worldPoint.x - this._cache.bottomLeft.x) * this._cache.scale,
+                    y: (worldPoint.y - this._cache.topRight.y) * this._cache.scale
+                };
+            case MapType.LEAFLET:
+                // Note: smooth zooming is not yet supported for leaflet
+                pnt = this.map.latLngToContainerPoint(position);
+                return pnt;
+            case MapType.OPENLAYERS3:
+                // Note: updates during map interaction are not yet supported
+                pnt = this.map.getPixelFromCoordinate(ol.proj.transform([MapUtility.lng(position), MapUtility.lat(position)], 'EPSG:4326', 'EPSG:3857'));
+                return {x: pnt[0], y: pnt[1]};
+            case MapType.MAPBOXGL:
+                return this.map.project([MapUtility.lng(position), MapUtility.lat(position)]);
         }
     };
 
@@ -307,21 +307,21 @@ define(function(require, exports, module) {
      */
     MapView.prototype.positionFromPoint = function(point) {
         switch (this.mapType) {
-        case MapType.GOOGLEMAPS:
-            var worldPoint = new google.maps.Point(
-                (point.x / this._cache.scale) + this._cache.bottomLeft.x,
-                (point.y / this._cache.scale) + this._cache.topRight.y
-            );
-            return this.map.getProjection().fromPointToLatLng(worldPoint);
-        case MapType.LEAFLET:
-            // Note: smooth zooming is not yet supported for leaflet
-            return this.map.containerPointToLatLng(point);
-        case MapType.OPENLAYERS3:
-            // Note: updates during map interaction are not yet supported
-            var lonLat = ol.proj.transform(this.map.getCoordinateFromPixel([point.x, point.y]), 'EPSG:3857', 'EPSG:4326');
-            return {lat: lonLat[1], lng: lonLat[0]};
-        case MapType.MAPBOXGL:
-            return this.map.unproject(point);
+            case MapType.GOOGLEMAPS:
+                var worldPoint = new google.maps.Point(
+                    (point.x / this._cache.scale) + this._cache.bottomLeft.x,
+                    (point.y / this._cache.scale) + this._cache.topRight.y
+                );
+                return this.map.getProjection().fromPointToLatLng(worldPoint);
+            case MapType.LEAFLET:
+                // Note: smooth zooming is not yet supported for leaflet
+                return this.map.containerPointToLatLng(point);
+            case MapType.OPENLAYERS3:
+                // Note: updates during map interaction are not yet supported
+                var lonLat = ol.proj.transform(this.map.getCoordinateFromPixel([point.x, point.y]), 'EPSG:3857', 'EPSG:4326');
+                return {lat: lonLat[1], lng: lonLat[0]};
+            case MapType.MAPBOXGL:
+                return this.map.unproject(point);
         }
     };
 
@@ -365,60 +365,60 @@ define(function(require, exports, module) {
 
         // Calculate size of the MapView
         switch (this.mapType) {
-        case MapType.GOOGLEMAPS:
+            case MapType.GOOGLEMAPS:
 
-            if (!(northEast instanceof google.maps.LatLng)) {
-                northEast = new google.maps.LatLng(MapUtility.lat(northEast), MapUtility.lng(northEast), true);
-            }
-            if (!(southWest instanceof google.maps.LatLng)) {
-                southWest = new google.maps.LatLng(MapUtility.lat(southWest), MapUtility.lng(southWest), true);
-            }
+                if (!(northEast instanceof google.maps.LatLng)) {
+                    northEast = new google.maps.LatLng(MapUtility.lat(northEast), MapUtility.lng(northEast), true);
+                }
+                if (!(southWest instanceof google.maps.LatLng)) {
+                    southWest = new google.maps.LatLng(MapUtility.lat(southWest), MapUtility.lng(southWest), true);
+                }
 
-            var topRight = this.map.getProjection().fromLatLngToPoint(northEast);
-            var bottomLeft = this.map.getProjection().fromLatLngToPoint(southWest);
-            this._cache.size = [
-                (topRight.x - bottomLeft.x) * this._cache.finalScale,
-                (bottomLeft.y - topRight.y) * this._cache.finalScale
-            ];
-            break;
-        case MapType.LEAFLET:
-            var point = this.map.getSize();
-            this._cache.size = [point.x, point.y];
-            break;
-        case MapType.OPENLAYERS3:
-            this._cache.size = this.map.getSize();
-            break;
-        case MapType.MAPBOXGL:
-            this._cache.size = this.getParentSize();
-            break;
+                var topRight = this.map.getProjection().fromLatLngToPoint(northEast);
+                var bottomLeft = this.map.getProjection().fromLatLngToPoint(southWest);
+                this._cache.size = [
+                    (topRight.x - bottomLeft.x) * this._cache.finalScale,
+                    (bottomLeft.y - topRight.y) * this._cache.finalScale
+                ];
+                break;
+            case MapType.LEAFLET:
+                var point = this.map.getSize();
+                this._cache.size = [point.x, point.y];
+                break;
+            case MapType.OPENLAYERS3:
+                this._cache.size = this.map.getSize();
+                break;
+            case MapType.MAPBOXGL:
+                this._cache.size = this.getParentSize();
+                break;
         }
 
         // Calculate current world point edges and scale
         switch (this.mapType) {
-        case MapType.GOOGLEMAPS:
+            case MapType.GOOGLEMAPS:
 
-            northEast = this._zoom.northEast.get();
-            southWest = this._zoom.southWest.get();
-            if (!(northEast instanceof google.maps.LatLng)) {
-                northEast = new google.maps.LatLng(MapUtility.lat(northEast), MapUtility.lng(northEast), true);
-            }
-            if (!(southWest instanceof google.maps.LatLng)) {
-                southWest = new google.maps.LatLng(MapUtility.lat(southWest), MapUtility.lng(southWest), true);
-            }
+                northEast = this._zoom.northEast.get();
+                southWest = this._zoom.southWest.get();
+                if (!(northEast instanceof google.maps.LatLng)) {
+                    northEast = new google.maps.LatLng(MapUtility.lat(northEast), MapUtility.lng(northEast), true);
+                }
+                if (!(southWest instanceof google.maps.LatLng)) {
+                    southWest = new google.maps.LatLng(MapUtility.lat(southWest), MapUtility.lng(southWest), true);
+                }
 
-            this._cache.topRight = this.map.getProjection().fromLatLngToPoint(northEast);
-            this._cache.bottomLeft = this.map.getProjection().fromLatLngToPoint(southWest);
-            this._cache.scale = this._cache.size[0] / (this._cache.topRight.x - this._cache.bottomLeft.x);
-            this._cache.zoom = Math.log(this._cache.scale) / Math.log(2);
-            break;
-        case MapType.LEAFLET:
-        case MapType.OPENLAYERS3:
-        case MapType.MAPBOXGL:
+                this._cache.topRight = this.map.getProjection().fromLatLngToPoint(northEast);
+                this._cache.bottomLeft = this.map.getProjection().fromLatLngToPoint(southWest);
+                this._cache.scale = this._cache.size[0] / (this._cache.topRight.x - this._cache.bottomLeft.x);
+                this._cache.zoom = Math.log(this._cache.scale) / Math.log(2);
+                break;
+            case MapType.LEAFLET:
+            case MapType.OPENLAYERS3:
+            case MapType.MAPBOXGL:
 
-            // Note: smooth zooming is not yet supported for leaflet, and
-            // updates during map interaction are not yet supported for ol3
-            this._cache.zoom = zoom;
-            break;
+                // Note: smooth zooming is not yet supported for leaflet, and
+                // updates during map interaction are not yet supported for ol3
+                this._cache.zoom = zoom;
+                break;
         }
     };
 
@@ -435,75 +435,75 @@ define(function(require, exports, module) {
         var center;
         var zoom;
         switch (this.mapType) {
-        case MapType.GOOGLEMAPS:
+            case MapType.GOOGLEMAPS:
 
-            // map.getBounds() returns the northEast and southWest in wrapped coordinates (between -180..180).
-            // This makes it difficult to create a linear coordinate space for converting world-coordinates
-            // into pixels. This function therefore 'unwraps' the northEast and southWest coordinates using
-            // * map.getCenter() (which does return unwrapped coordinates).
-            bounds = this.map.getBounds();
-            center = this.map.getCenter();
-            zoom = this.map.getZoom();
+                // map.getBounds() returns the northEast and southWest in wrapped coordinates (between -180..180).
+                // This makes it difficult to create a linear coordinate space for converting world-coordinates
+                // into pixels. This function therefore 'unwraps' the northEast and southWest coordinates using
+                // * map.getCenter() (which does return unwrapped coordinates).
+                bounds = this.map.getBounds();
+                center = this.map.getCenter();
+                zoom = this.map.getZoom();
 
-            var centerLng = MapUtility.lng(center);
+                var centerLng = MapUtility.lng(center);
 
-            northEast = bounds.getNorthEast();
-            var northEastLng = northEast.lng();
-            while (northEastLng < centerLng) {
-                northEastLng += 360;
-            }
-            while (northEastLng > (centerLng + 360)) {
-                northEastLng -= 360;
-            }
+                northEast = bounds.getNorthEast();
+                var northEastLng = northEast.lng();
+                while (northEastLng < centerLng) {
+                    northEastLng += 360;
+                }
+                while (northEastLng > (centerLng + 360)) {
+                    northEastLng -= 360;
+                }
 
-            southWest = bounds.getSouthWest();
-            var southWestLng = southWest.lng();
-            while (southWestLng < (centerLng - 360)) {
-                southWestLng += 360;
-            }
-            while (southWestLng > centerLng) {
-                southWestLng -= 360;
-            }
+                southWest = bounds.getSouthWest();
+                var southWestLng = southWest.lng();
+                while (southWestLng < (centerLng - 360)) {
+                    southWestLng += 360;
+                }
+                while (southWestLng > centerLng) {
+                    southWestLng -= 360;
+                }
 
-            return {
-                zoom: zoom,
-                center: {lat: center.lat(), lng: center.lng()},
-                southWest: {lat: southWest.lat(), lng: southWestLng},
-                northEast: {lat: northEast.lat(), lng: northEastLng}
-            };
-        case MapType.LEAFLET:
-            bounds = this.map.getBounds();
-            southWest = bounds.getSouthWest();
-            northEast = bounds.getNorthEast();
-            center = this.map.getCenter();
-            zoom = this.map.getZoom();
-            return {
-                zoom: zoom,
-                center: {lat: center.lat, lng: center.lng},
-                southWest: {lat: southWest.lat, lng: southWest.lng},
-                northEast: {lat: northEast.lat, lng: northEast.lng}
-            };
-        case MapType.OPENLAYERS3:
-            var view = this.map.getView();
-            bounds = ol.proj.transformExtent(view.calculateExtent(this.map.getSize()), 'EPSG:3857', 'EPSG:4326');
-            center = ol.proj.transform(view.getCenter(), 'EPSG:3857', 'EPSG:4326');
-            zoom = view.getZoom();
-            return {
-                zoom: zoom,
-                center: {lat: center[1], lng: center[0]},
-                southWest: {lat: bounds[1], lng: bounds[0]},
-                northEast: {lat: bounds[3], lng: bounds[2]},
-                rotation: view.getRotation()
-            };
-        case MapType.MAPBOXGL:
-            bounds = this.map.getBounds();
-            return {
-                zoom: this.map.getZoom(),
-                center: this.map.getCenter(),
-                southWest: bounds.getSouthWest(),
-                northEast: bounds.getNorthEast(),
-                rotation: (this.map.getBearing() * Math.PI) / -180
-            };
+                return {
+                    zoom: zoom,
+                    center: {lat: center.lat(), lng: center.lng()},
+                    southWest: {lat: southWest.lat(), lng: southWestLng},
+                    northEast: {lat: northEast.lat(), lng: northEastLng}
+                };
+            case MapType.LEAFLET:
+                bounds = this.map.getBounds();
+                southWest = bounds.getSouthWest();
+                northEast = bounds.getNorthEast();
+                center = this.map.getCenter();
+                zoom = this.map.getZoom();
+                return {
+                    zoom: zoom,
+                    center: {lat: center.lat, lng: center.lng},
+                    southWest: {lat: southWest.lat, lng: southWest.lng},
+                    northEast: {lat: northEast.lat, lng: northEast.lng}
+                };
+            case MapType.OPENLAYERS3:
+                var view = this.map.getView();
+                bounds = ol.proj.transformExtent(view.calculateExtent(this.map.getSize()), 'EPSG:3857', 'EPSG:4326');
+                center = ol.proj.transform(view.getCenter(), 'EPSG:3857', 'EPSG:4326');
+                zoom = view.getZoom();
+                return {
+                    zoom: zoom,
+                    center: {lat: center[1], lng: center[0]},
+                    southWest: {lat: bounds[1], lng: bounds[0]},
+                    northEast: {lat: bounds[3], lng: bounds[2]},
+                    rotation: view.getRotation()
+                };
+            case MapType.MAPBOXGL:
+                bounds = this.map.getBounds();
+                return {
+                    zoom: this.map.getZoom(),
+                    center: this.map.getCenter(),
+                    southWest: bounds.getSouthWest(),
+                    northEast: bounds.getNorthEast(),
+                    rotation: (this.map.getBearing() * Math.PI) / -180
+                };
         }
     };
 
@@ -547,8 +547,8 @@ define(function(require, exports, module) {
 
             // Update the cache
             if (invalidateCache || (info.zoom !== this._cache.finalZoom) ||
-                    !MapUtility.equals(info.northEast, this._cache.finalNorthEast) ||
-                    !MapUtility.equals(info.southWest, this._cache.finalSouthWest)) {
+                !MapUtility.equals(info.northEast, this._cache.finalNorthEast) ||
+                !MapUtility.equals(info.southWest, this._cache.finalSouthWest)) {
                 //console.log('updating cache..');
                 this._updateCache(info.zoom, info.northEast, info.southWest);
             }
@@ -565,18 +565,18 @@ define(function(require, exports, module) {
             }
             if (options) {
                 switch (this.mapType) {
-                case MapType.GOOGLEMAPS:
-                    this.map.setOptions(options);
-                    break;
-                case MapType.LEAFLET:
-                    this.map.panTo(options.center, {animate: false});
-                    break;
-                case MapType.OPENLAYERS3:
-                    this.map.getView().setCenter(ol.proj.transform([MapUtility.lng(options.center), MapUtility.lat(options.center)], 'EPSG:4326', 'EPSG:3857'));
-                    break;
-                case MapType.MAPBOXGL:
-                    this.map.setCenter([MapUtility.lat(options.center), MapUtility.lng(options.center)]);
-                    break;
+                    case MapType.GOOGLEMAPS:
+                        this.map.setOptions(options);
+                        break;
+                    case MapType.LEAFLET:
+                        this.map.panTo(options.center, {animate: false});
+                        break;
+                    case MapType.OPENLAYERS3:
+                        this.map.getView().setCenter(ol.proj.transform([MapUtility.lng(options.center), MapUtility.lat(options.center)], 'EPSG:4326', 'EPSG:3857'));
+                        break;
+                    case MapType.MAPBOXGL:
+                        this.map.setCenter([MapUtility.lng(options.center), MapUtility.lat(options.center)]);
+                        break;
                 }
             }
             if (!this._loadEventEmitted) {

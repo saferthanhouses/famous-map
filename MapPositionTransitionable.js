@@ -29,8 +29,9 @@ define(function(require, exports, module) {
      * @param {LatLng} [position] Default geopgraphical position
      * @alias module:MapPositionTransitionable
      */
-    function MapPositionTransitionable(position) {
+    function MapPositionTransitionable(position, coordsReversed) {
         this.position = new Transitionable([0, 0]);
+        this.coordsReversed = coordsReversed;
         if (position) {
             this.set(position);
         }
@@ -51,7 +52,10 @@ define(function(require, exports, module) {
      * @param {LatLng} position
      */
     MapPositionTransitionable.prototype.reset = function reset(position) {
-        var latlng = [MapUtility.lat(position), MapUtility.lng(position)];
+        var latlng = !this.coordsReversed ?
+            [MapUtility.lat(position), MapUtility.lng(position)] :
+            [MapUtility.lng(position), MapUtility.lat(position)];
+
         this.position.reset(latlng);
         this._final = position;
     };
@@ -64,7 +68,11 @@ define(function(require, exports, module) {
      * @param {Function} [callback] Callback
      */
     MapPositionTransitionable.prototype.set = function set(position, transition, callback) {
-        var latlng = [MapUtility.lat(position), MapUtility.lng(position)];
+
+        var latlng = !this.coordsReversed ?
+            [MapUtility.lat(position), MapUtility.lng(position)] :
+            [MapUtility.lng(position), MapUtility.lat(position)];
+
         this.position.set(latlng, transition, callback);
         this._final = position;
         return this;
