@@ -28,9 +28,10 @@ define(function(require, exports, module) {
      * @param {LatLng} position Position
      * @return {Number} Latitude in degrees
      */
-    MapUtility.lat = function lat(position) {
+    MapUtility.lat = function lat(position, reversed) {
+        // if coordsReversed, return 1
         if (position instanceof Array) {
-            return position[0];
+            return reversed ? position[1] : position[0];
         }
         else if (position.lat instanceof Function) {
             return position.lat();
@@ -46,9 +47,9 @@ define(function(require, exports, module) {
      * @param {LatLng} position Position
      * @return {Number} Longitude in degrees
      */
-    MapUtility.lng = function lng(position) {
+    MapUtility.lng = function lng(position, reversed) {
         if (position instanceof Array) {
-            return position[1];
+            return reversed ? position[0] : position[1];
         }
         else if (position.lng instanceof Function) {
             return position.lng();
@@ -65,9 +66,9 @@ define(function(require, exports, module) {
      * @param {LatLng} position2 Position 2
      * @return {Boolean} Result of comparison
      */
-    MapUtility.equals = function(position1, position2) {
-        return (MapUtility.lat(position1) === MapUtility.lat(position2)) &&
-               (MapUtility.lng(position1) === MapUtility.lng(position2));
+    MapUtility.equals = function(position1, position2, reversed) {
+        return (MapUtility.lat(position1, reversed) === MapUtility.lat(position2, reversed)) &&
+            (MapUtility.lng(position1, reversed) === MapUtility.lng(position2, reversed));
     };
 
     /**
@@ -87,8 +88,8 @@ define(function(require, exports, module) {
      * @param {LatLng} end End position.
      * @return {Number} Rotation in radians.
      */
-    MapUtility.rotationFromPositions = function(start, end) {
-        return Math.atan2(MapUtility.lng(start) - MapUtility.lng(end), MapUtility.lat(start) - MapUtility.lat(end)) + (Math.PI / 2.0);
+    MapUtility.rotationFromPositions = function(start, end, reversed) {
+        return Math.atan2(MapUtility.lng(start, reversed) - MapUtility.lng(end, reversed), MapUtility.lat(start, reversed) - MapUtility.lat(end, reversed)) + (Math.PI / 2.0);
     };
 
     /**
@@ -98,18 +99,18 @@ define(function(require, exports, module) {
      * @param {LatLng} end End position
      * @return {Number} Distance in km
      */
-    MapUtility.distanceBetweenPositions = function(start, end) {
+    MapUtility.distanceBetweenPositions = function(start, end, reversed) {
 
         // Taken from: http://www.movable-type.co.uk/scripts/latlong.html
         var R = 6371; // earths radius in km
-        var lat1 = MapUtility.radiansFromDegrees(MapUtility.lat(start));
-        var lat2 = MapUtility.radiansFromDegrees(MapUtility.lat(end));
-        var deltaLat = MapUtility.radiansFromDegrees(MapUtility.lat(end) - MapUtility.lat(start));
-        var deltaLng = MapUtility.radiansFromDegrees(MapUtility.lng(end) - MapUtility.lng(start));
+        var lat1 = MapUtility.radiansFromDegrees(MapUtility.lat(start, reversed));
+        var lat2 = MapUtility.radiansFromDegrees(MapUtility.lat(end, reversed));
+        var deltaLat = MapUtility.radiansFromDegrees(MapUtility.lat(end, reversed) - MapUtility.lat(start, reversed));
+        var deltaLng = MapUtility.radiansFromDegrees(MapUtility.lng(end, reversed) - MapUtility.lng(start, reversed));
 
         var a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-                Math.cos(lat1) * Math.cos(lat2) *
-                Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+            Math.cos(lat1) * Math.cos(lat2) *
+            Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         var d = R * c;

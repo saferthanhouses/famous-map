@@ -37,6 +37,8 @@ define(function(require, exports, module) {
 
         this.mapView = options.mapView;
 
+        this.coordsReversed = this.mapView.mapType === 4 || false;
+
         this._output = {
             transform: Transform.identity,
             opacity: 1,
@@ -249,15 +251,15 @@ define(function(require, exports, module) {
             // Offset position
             if (this._offset) {
                 position = {
-                    lat: MapUtility.lat(position) + MapUtility.lat(this._offset),
-                    lng: MapUtility.lng(position) + MapUtility.lng(this._offset)
+                    lat: MapUtility.lat(position, this.coordsReversed) + MapUtility.lat(this._offset, this.coordsReversed),
+                    lng: MapUtility.lng(position, this.coordsReversed) + MapUtility.lng(this._offset, this.coordsReversed)
                 };
             }
 
             // Calculate rotation transform
             var rotateTowards = this._rotateTowardsGetter ? this._rotateTowardsGetter() : this._rotateTowards;
             if (rotateTowards) {
-                var rotation = MapUtility.rotationFromPositions(position, rotateTowards);
+                var rotation = MapUtility.rotationFromPositions(position, rotateTowards, this.coordsReversed);
                 rotation += this.mapView.getRotation();
                 if (this._cache.rotation !== rotation) {
                     this._cache.rotation = rotation;
