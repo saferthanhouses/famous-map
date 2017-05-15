@@ -85,15 +85,19 @@ define(function(require, exports, module) {
      */
     MapPositionTransitionable.prototype.get = function get() {
         if (this.isActive()) {
+
             var latlng = this.position.get();
-            // this needs to be a conditional check whether it's mapbox
-            // return {
-            //     lat: latlng[0],
-            //     lng: latlng[1]
-            // };
-            return {
-                lat: latlng[1],
-                lng: latlng[0]
+
+            if (this.coordsReversed){
+                return {
+                    lat: latlng[1],
+                    lng: latlng[0]
+                }
+            } else {
+                return {
+                    lat: latlng[0],
+                    lng: latlng[1]
+                };
             }
         }
         else {
