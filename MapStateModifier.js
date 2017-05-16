@@ -35,8 +35,15 @@ define(function(require, exports, module) {
      */
     function MapStateModifier(options) {
         this.mapView = options.mapView;
-        this._positionState = new MapPositionTransitionable(options.position);
-        this._rotateTowardsState = new MapPositionTransitionable(options.rotateTowards);
+
+        let coordsReversed = false;
+        if (options.mapView.mapType === 4){
+            // reverse the position to [lng, lat] for mapbox
+            coordsReversed = true;
+        }
+
+        this._positionState = new MapPositionTransitionable(options.position, coordsReversed);
+        this._rotateTowardsState = new MapPositionTransitionable(options.rotateTowards, coordsReversed);
 
         this._modifier = new MapModifier({
             mapView: this.mapView
